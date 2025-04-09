@@ -1,0 +1,27 @@
+# Java 
+*.class 
+*.jar 
+*.war 
+*.ear 
+target/ 
+.mvn/ 
+# Flutter/Dart 
+.dart_tool/ 
+.flutter-plugins 
+.flutter-plugins-dependencies 
+.packages 
+build/ 
+pubspec.lock 
+# IntelliJ 
+.idea/ 
+*.iml 
+*.ipr 
+*.iws 
+# VS Code 
+.vscode/ 
+# Local configuration 
+.env 
+*.env.local 
+# System Files 
+.DS_Store 
+Thumbs.db 

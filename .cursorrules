@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "Java Microservice Standards",
+      "pattern": "backend/**/*.java",
+      "directives": [
+        "Follow clean code principles",
+        "Use Spring best practices",
+        "Include Javadoc for public methods",
+        "Organize imports alphabetically",
+        "Use constructor injection for dependencies",
+        "Prefer immutable objects where appropriate",
+        "Use Optional for nullable return values",
+        "Include validation annotations on DTOs",
+        "Handle exceptions appropriately with @ExceptionHandler",
+        "Use proper HTTP status codes in REST responses"
+      ]
+    },
+    {
+      "name": "Controller Standards",
+      "pattern": "backend/**/controller/*.java",
+      "directives": [
+        "Include @RestController annotation",
+        "Define API paths with meaningful names",
+        "Group related endpoints in the same controller",
+        "Document APIs with OpenAPI annotations",
+        "Validate request parameters",
+        "Return ResponseEntity with appropriate status codes",
+        "Keep controllers thin, delegate to services",
+        "Use DTOs for request/response, not domain models"
+      ]
+    },
+    {
+      "name": "Service Standards",
+      "pattern": "backend/**/service/*.java",
+      "directives": [
+        "Include @Service annotation",
+        "Implement business logic, not infrastructure concerns",
+        "Use transactions where appropriate (@Transactional)",
+        "Log important events and errors",
+        "Validate input parameters",
+        "Document complex business logic",
+        "Handle exceptions at appropriate levels"
+      ]
+    },
+    {
+      "name": "Repository Standards",
+      "pattern": "backend/**/repository/*.java",
+      "directives": [
+        "Include @Repository annotation for custom repositories",
+        "Extend JpaRepository or other Spring Data interfaces",
+        "Use query methods or @Query annotations for custom queries",
+        "Optimize queries with proper indexing hints",
+        "Consider pagination for large result sets",
+        "Use spatial queries for map-related features"
+      ]
+    },
+    {
+      "name": "Map Service Standards",
+      "pattern": "backend/map-service/**/*.java",
+      "directives": [
+        "Use PostGIS spatial types and functions",
+        "Optimize viewport queries with spatial indexes",
+        "Implement clustering algorithms for provider pins",
+        "Cache frequent viewport queries",
+        "Consider response size when returning large provider sets",
+        "Include distance calculations in queries, not in application code"
+      ]
+    },
+    {
+      "name": "Flutter Standards",
+      "pattern": "apps/**/*.dart",
+      "directives": [
+        "Follow Flutter best practices",
+        "Use named parameters for clarity",
+        "Separate UI from business logic",
+        "Use const constructors where possible",
+        "Prefer composition over inheritance",
+        "Create reusable widgets for common UI elements",
+        "Handle loading and error states appropriately",
+        "Provide accessibility labels for widgets",
+        "Include internationalization support"
+      ]
+    },
+    {
+      "name": "User App Map Standards",
+      "pattern": "apps/user-app/lib/features/map/**/*.dart",
+      "directives": [
+        "Optimize map redraws",
+        "Handle different zoom levels appropriately",
+        "Implement efficient marker clustering",
+        "Cache map data when appropriate",
+        "Handle map state preservation during navigation",
+        "Consider performance on lower-end devices",
+        "Implement smooth transitions between map states"
+      ]
+    },
+    {
+      "name": "Provider App Standards",
+      "pattern": "apps/provider-app/**/*.dart",
+      "directives": [
+        "Prioritize real-time notification handling",
+        "Optimize calendar and schedule views",
+        "Handle background and foreground notification states",
+        "Implement efficient appointment management UI",
+        "Allow offline capability for viewing schedules"
+      ]
+    },
+    {
+      "name": "Multi-language Support",
+      "pattern": "apps/**/i18n/**",
+      "directives": [
+        "Use standard localization patterns",
+        "Include support for all target languages",
+        "Consider text expansion/contraction between languages",
+        "Use context-aware translations",
+        "Support RTL languages where needed"
+      ]
+    },
+    {
+      "name": "Docker Standards",
+      "pattern": "**/Dockerfile",
+      "directives": [
+        "Use multi-stage builds for smaller images",
+        "Specify exact versions for base images",
+        "Run as non-root user",
+        "Include health checks",
+        "Optimize layer caching",
+        "Remove unnecessary dependencies",
+        "Set appropriate environment variables"
+      ]
+    },
+    {
+      "name": "Security Standards",
+      "pattern": "**/*.java",
+      "directives": [
+        "Sanitize inputs to prevent injection attacks",
+        "Use parameterized queries",
+        "Never log sensitive information",
+        "Implement proper authorization checks",
+        "Use HTTPS for all endpoints",
+        "Apply principle of least privilege",
+        "Properly handle sensitive data like health information"
+      ]
+    }
+  ]
+}

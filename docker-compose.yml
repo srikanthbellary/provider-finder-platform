@@ -1,0 +1,36 @@
+version: '3.8' 
+services: 
+  # Database services 
+  postgres: 
+    image: postgis/postgis:14-3.3 
+    environment: 
+      POSTGRES_USER: appuser 
+      POSTGRES_PASSWORD: apppassword 
+      POSTGRES_DB: providerdb 
+    ports: 
+      - "5432:5432" 
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data 
+ 
+  redis: 
+    image: redis:7.0-alpine 
+    ports: 
+      - "6379:6379" 
+ 
+  # Infrastructure services 
+  discovery-server: 
+    build: 
+      context: ./backend/discovery-server 
+    ports: 
+      - "8761:8761" 
+ 
+  gateway: 
+    build: 
+      context: ./backend/gateway 
+    ports: 
+      - "8080:8080" 
+    depends_on: 
+      - discovery-server 
+ 
+volumes: 
+  postgres_data: 
