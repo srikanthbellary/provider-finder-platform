@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
 import org.locationtech.jts.geom.Point;
 
 import javax.persistence.*;
@@ -20,6 +19,7 @@ public class ProviderLocation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,8 +47,7 @@ public class ProviderLocation {
     @Column(name = "country")
     private String country;
 
-    @Column(name = "geolocation", nullable = false)
-    @Type(type = "org.hibernate.spatial.GeometryType")
+    @Column(name = "geolocation", nullable = false, columnDefinition = "geography(Point, 4326)")
     private Point geolocation;
 
     @Column(name = "is_primary")
