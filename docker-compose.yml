@@ -1,36 +1,198 @@
-version: '3.8' 
-services: 
-  # Database services 
-  postgres: 
-    image: postgis/postgis:14-3.3 
-    environment: 
-      POSTGRES_USER: appuser 
-      POSTGRES_PASSWORD: apppassword 
-      POSTGRES_DB: providerdb 
-    ports: 
-      - "5432:5432" 
-    volumes: 
-      - postgres_data:/var/lib/postgresql/data 
- 
-  redis: 
-    image: redis:7.0-alpine 
-    ports: 
-      - "6379:6379" 
- 
-  # Infrastructure services 
-  discovery-server: 
-    build: 
-      context: ./backend/discovery-server 
-    ports: 
-      - "8761:8761" 
- 
-  gateway: 
-    build: 
-      context: ./backend/gateway 
-    ports: 
-      - "8080:8080" 
-    depends_on: 
-      - discovery-server 
- 
-volumes: 
-  postgres_data: 
+version: '3.8'
+
+services:
+  # Database services
+  postgres:
+    image: postgis/postgis:14-3.3
+    container_name: provider-finder-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppassword}
+      POSTGRES_DB: ${POSTGRES_DB:-providerdb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db/init:/docker-entrypoint-initdb.d
+    networks:
+      - provider-finder-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d providerdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: provider-finder-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}
+    networks:
+      - provider-finder-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Elasticsearch for search capabilities
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: provider-finder-elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    networks:
+      - provider-finder-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Infrastructure services
+  discovery-server:
+    build:
+      context: ./backend/discovery-server
+      dockerfile: Dockerfile
+    container_name: provider-finder-discovery
+    ports:
+      - "${DISCOVERY_PORT:-8761}:8761"
+    networks:
+      - provider-finder-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./backend/gateway
+      dockerfile: Dockerfile
+    container_name: provider-finder-gateway
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - discovery-server
+    networks:
+      - provider-finder-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Core services (uncomment as you develop them)
+  
+  # map-service:
+  #   build:
+  #     context: ./backend/map-service
+  #     dockerfile: Dockerfile
+  #   container_name: provider-finder-map
+  #   ports:
+  #     - "${MAP_SERVICE_PORT:-8081}:8080"
+  #   depends_on:
+  #     - discovery-server
+  #     - postgres
+  #     - redis
+  #   networks:
+  #     - provider-finder-network
+  #   environment:
+  #     - SPRING_PROFILES_ACTIVE=docker
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/providerdb
+  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-appuser}
+  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-apppassword}
+  #     - SPRING_REDIS_HOST=redis
+  #     - SPRING_REDIS_PORT=6379
+  #     - SPRING_REDIS_PASSWORD=${REDIS_PASSWORD:-redispassword}
+  #     - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+  #   restart: unless-stopped
+  
+  # Development Tools (optional)
+  
+  # pgadmin:
+  #   image: dpage/pgadmin4:6.21
+  #   container_name: provider-finder-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   networks:
+  #     - provider-finder-network
+  #   restart: unless-stopped
+  
+  # Monitoring tools (optional)
+  
+  # prometheus:
+  #   image: prom/prometheus:v2.42.0
+  #   container_name: provider-finder-prometheus
+  #   volumes:
+  #     - ./infra/monitoring/prometheus:/etc/prometheus
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--web.enable-lifecycle'
+  #   ports:
+  #     - "${PROMETHEUS_PORT:-9090}:9090"
+  #   networks:
+  #     - provider-finder-network
+  #   restart: unless-stopped
+  
+  # grafana:
+  #   image: grafana/grafana:9.3.6
+  #   container_name: provider-finder-grafana
+  #   volumes:
+  #     - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning
+  #     - grafana_data:/var/lib/grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   ports:
+  #     - "${GRAFANA_PORT:-3000}:3000"
+  #   networks:
+  #     - provider-finder-network
+  #   restart: unless-stopped
+
+networks:
+  provider-finder-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  pgadmin_data:
+  prometheus_data:
+  grafana_data:
