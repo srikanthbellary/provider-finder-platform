@@ -4,8 +4,8 @@
 **Current Phase:** Backend Infrastructure & Initial Flutter UI Development  
 **Last Updated:** April 2025  
 **Active Components:** Docker Infrastructure, Map Service, Flutter User App  
-**Completed Components:** Project Structure, Git Setup, Docker Infrastructure, Map Service API with data  
-**Next Priority:** Complete Flutter Map UI and test connectivity to Map Service
+**Completed Components:** Project Structure, Git Setup, Docker Infrastructure, Map Service API with data, Map Service-Flutter integration  
+**Next Priority:** Add map clustering, search filtering, appointment booking flow
 
 ## System Architecture Summary
 - **Frontend:** Flutter for both user and provider apps
@@ -64,6 +64,7 @@
   - [x] Fix 500 Internal Server Error in provider search endpoint
   - [x] Add proper error handling for map API endpoints
   - [x] Optimize native SQL query for distance-based provider search
+  - [x] ✅ CHECKPOINT: Map service and Flutter UI integration working
   - [ ] Configure Redis caching for performance optimization
   
 - [ ] **Appointment Service**
@@ -169,7 +170,8 @@ This section captures important technical decisions to maintain continuity betwe
   - Added proper exception handling for native SQL queries
   - Fixed 500 Internal Server Error in provider search endpoint
   - Improved error response formats with contextual information
-  - Modified native SQL query for distance-based provider search to work correctly
+  - Modified SQL queries to use proper schema prefixes (`provider.location`)
+  - Implemented fallback approach for distance-based sorting
 - Comprehensive error response handling added with global exception handler
 - Distance-based sorting for providers near user location
 
@@ -180,6 +182,13 @@ This section captures important technical decisions to maintain continuity betwe
 - Docker Compose configuration complete and functional
 - Map Service containerized and connected to PostgreSQL successfully
 
+### Flutter-Backend Integration
+- Successfully tested connection between Flutter UI and backend map service
+- Established proper error handling in Flutter UI for API failures
+- Configured CORS to allow Flutter web app to access backend
+- Implemented viewport-based provider loading based on map movements
+- Set up provider detail display in bottom sheet with location information
+
 ## Environment Information
 - Development IDE: Cursor
 - Java version: 17
@@ -187,18 +196,19 @@ This section captures important technical decisions to maintain continuity betwe
 - Docker version: 24.0.6
 
 ## Notes for Continuity Between Sessions
-- Current focus: Testing and optimizing the Flutter map component
+- Current focus: Adding more features to the Flutter map interface
 - Recent accomplishments: 
   1. Created the initial Flutter UI structure for the user app
   2. Implemented the map component with provider pins
   3. Built the API client to connect to the Map Service
   4. Created provider detail view with comprehensive information display
   5. Fixed 500 Internal Server Error in map-service endpoints
+  6. ✅ CHECKPOINT: Established stable integration between Flutter UI and backend
 - Next priorities: 
-  1. Test the connection to the Map Service API
-  2. Configure Redis caching correctly for map service
-  3. Implement marker clustering for better map performance
-  4. Add search and filtering capabilities
+  1. Create feature branch for further development
+  2. Implement marker clustering for better map performance
+  3. Add search and filtering capabilities
+  4. Configure Redis caching correctly for map service
   5. Begin developing the appointment booking flow
 
 ---
