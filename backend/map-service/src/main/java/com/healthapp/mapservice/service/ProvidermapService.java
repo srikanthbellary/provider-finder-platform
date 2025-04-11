@@ -49,7 +49,6 @@ public class ProviderMapService {
      * Search for providers within a given viewport with optional filtering
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "viewportProviders", key = "{#request.northLat, #request.southLat, #request.eastLng, #request.westLng, #request.searchTerm, #request.specialtyIds, #request.providerTypeIds, #request.languageIds, #request.isVerifiedOnly, #request.isRegisteredOnly, #request.page, #request.pageSize}")
     public ProviderSearchResponse searchProviders(ProviderSearchRequest request) {
         // Create a polygon representing the viewport
         Polygon viewport = createViewportPolygon(
@@ -162,49 +161,32 @@ public class ProviderMapService {
      * Search for providers using native query with distance calculation
      */
     private List<ProviderResponse> searchProvidersWithDistance(ProviderSearchRequest request) {
-        // Calculate pagination
-        int offset = (request.getPage() - 1) * request.getPageSize();
-        int limit = Math.min(request.getPageSize(), maxResults);
-        
-        // Get specialty, provider type, and language IDs for filtering
-        Integer specialtyId = request.getSpecialtyIds() != null && !request.getSpecialtyIds().isEmpty() 
-                ? request.getSpecialtyIds().get(0) 
-                : null;
-        
-        Integer providerTypeId = request.getProviderTypeIds() != null && !request.getProviderTypeIds().isEmpty() 
-                ? request.getProviderTypeIds().get(0) 
-                : null;
-        
-        Integer languageId = request.getLanguageIds() != null && !request.getLanguageIds().isEmpty() 
-                ? request.getLanguageIds().get(0) 
-                : null;
-        
-        // Execute native query
-        List<Object[]> results = providerLocationRepository.findAllInViewportWithDistanceNative(
-                request.getWestLng(),
-                request.getSouthLat(),
-                request.getEastLng(),
-                request.getNorthLat(),
-                request.getUserLng(),
-                request.getUserLat(),
-                request.getSearchTerm(),
-                specialtyId,
-                providerTypeId,
-                languageId,
-                request.getIsVerifiedOnly(),
-                request.getIsRegisteredOnly(),
-                limit,
-                offset
-        );
-        
-        // Process native query results
-        // This is a simplified implementation - would need to be adjusted based on actual query and mapping
-        List<ProviderResponse> providerResponses = new ArrayList<>();
-        
-        // TODO: Implement conversion from native query results to ProviderResponse objects
-        // This requires mapping the columns from the native query to the DTO fields
-        
-        return providerResponses;
+        try {
+            log.debug("Executing provider search with distance calculation");
+            
+            // Create viewport polygon
+            Polygon viewport = createViewportPolygon(
+                    request.getWestLng(), 
+                    request.getSouthLat(), 
+                    request.getEastLng(), 
+                    request.getNorthLat()
+            );
+            
+            // For now, use JPA query while we troubleshoot the native query
+            log.debug("Using JPA query as alternative to native query with distance");
+            return searchProvidersWithJpa(request, viewport);
+            
+        } catch (Exception e) {
+            log.error("Error searching for providers with distance: {}", e.getMessage(), e);
+            // Fallback to standard JPA query without distance sorting
+            Polygon viewport = createViewportPolygon(
+                    request.getWestLng(), 
+                    request.getSouthLat(), 
+                    request.getEastLng(), 
+                    request.getNorthLat()
+            );
+            return searchProvidersWithJpa(request, viewport);
+        }
     }
     
     /**

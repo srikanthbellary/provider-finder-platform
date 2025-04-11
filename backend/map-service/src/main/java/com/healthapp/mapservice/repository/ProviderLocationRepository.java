@@ -78,7 +78,7 @@ public interface ProviderLocationRepository extends JpaRepository<ProviderLocati
     
     // Native query to find providers within viewport with distance calculation
     @Query(value = 
-            "SELECT l.*, " +
+            "SELECT l.id, " +
             "ST_Distance(l.geolocation::geography, ST_SetSRID(ST_MakePoint(:userLng, :userLat), 4326)::geography) / 1000 as distance_km " +
             "FROM provider.location l " +
             "JOIN provider.provider p ON l.provider_id = p.id " +

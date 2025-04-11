@@ -11,9 +11,12 @@ spring:
     username: ${POSTGRES_USER:appuser}
     password: ${POSTGRES_PASSWORD:apppassword}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -24,18 +27,19 @@ spring:
             non_contextual_creation: true
         type:
           preferred_long_representation: INTEGER
+    open-in-view: false
+  cache:
+    type: none
   redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:redispassword}
+    host: localhost
+    port: 6379
+    timeout: 2000
 
 eureka:
   client:
     enabled: false
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+    fetch-registry: false
+    register-with-eureka: false
   instance:
     prefer-ip-address: true
 
@@ -65,6 +69,16 @@ app:
       provider-ttl-seconds: 300
       viewport-ttl-seconds: 120
 
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.healthapp.mapservice: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    org.springframework.jdbc.core.JdbcTemplate: DEBUG
+    org.springframework.jdbc.core.StatementCreatorUtils: TRACE
+
 ---
 # Docker profile
 spring:
@@ -75,6 +89,8 @@ spring:
     url: jdbc:postgresql://postgres:5432/providerdb
   redis:
     host: redis
+    port: 6379
+    password:
 
 eureka:
   client:

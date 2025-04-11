@@ -11,9 +11,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -42,6 +44,10 @@ public class ProviderMapController {
             @ApiResponse(
                 responseCode = "400",
                 description = "Invalid request parameters"
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Internal server error"
             )
         }
     )
@@ -49,9 +55,14 @@ public class ProviderMapController {
     public ResponseEntity<ProviderSearchResponse> searchProviders(
             @Valid @RequestBody ProviderSearchRequest request) {
         
-        log.debug("Searching for providers with request: {}", request);
-        ProviderSearchResponse response = providerMapService.searchProviders(request);
-        return ResponseEntity.ok(response);
+        try {
+            log.debug("Searching for providers with request: {}", request);
+            ProviderSearchResponse response = providerMapService.searchProviders(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error searching for providers: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing provider search", e);
+        }
     }
 
     @Operation(
@@ -66,6 +77,10 @@ public class ProviderMapController {
             @ApiResponse(
                 responseCode = "400",
                 description = "Invalid request parameters"
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Internal server error"
             )
         }
     )
@@ -119,28 +134,53 @@ public class ProviderMapController {
             @Parameter(description = "Sort direction (asc, desc)")
             @RequestParam(defaultValue = "asc") String sortDirection) {
         
-        // Build search request from parameters
-        ProviderSearchRequest request = ProviderSearchRequest.builder()
-                .northLat(northLat)
-                .southLat(southLat)
-                .eastLng(eastLng)
-                .westLng(westLng)
-                .searchTerm(searchTerm)
-                .specialtyIds(specialtyIds)
-                .providerTypeIds(providerTypeIds)
-                .languageIds(languageIds)
-                .isVerifiedOnly(verifiedOnly)
-                .isRegisteredOnly(registeredOnly)
-                .page(page)
-                .pageSize(pageSize)
-                .userLat(userLat)
-                .userLng(userLng)
-                .sortBy(sortBy)
-                .sortDirection(sortDirection)
-                .build();
-        
-        log.debug("GET request for providers in viewport: {}", request);
-        ProviderSearchResponse response = providerMapService.searchProviders(request);
-        return ResponseEntity.ok(response);
+        try {
+            // Validate that south latitude is less than north latitude
+            if (southLat >= northLat) {
+                throw new IllegalArgumentException("South latitude must be less than north latitude");
+            }
+            
+            // Validate that west longitude is less than east longitude
+            if (westLng >= eastLng) {
+                throw new IllegalArgumentException("West longitude must be less than east longitude");
+            }
+            
+            // Build search request from parameters
+            ProviderSearchRequest request = ProviderSearchRequest.builder()
+                    .northLat(northLat)
+                    .southLat(southLat)
+                    .eastLng(eastLng)
+                    .westLng(westLng)
+                    .searchTerm(searchTerm)
+                    .specialtyIds(specialtyIds)
+                    .providerTypeIds(providerTypeIds)
+                    .languageIds(languageIds)
+                    .isVerifiedOnly(verifiedOnly)
+                    .isRegisteredOnly(registeredOnly)
+                    .page(page)
+                    .pageSize(pageSize)
+                    .userLat(userLat)
+                    .userLng(userLng)
+                    .sortBy(sortBy)
+                    .sortDirection(sortDirection)
+                    .build();
+            
+            log.debug("GET request for providers in viewport: {}", request);
+            ProviderSearchResponse response = providerMapService.searchProviders(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid viewport parameters: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Error retrieving providers in viewport: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing provider search", e);
+        }
+    }
+    
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<String> handleResponseStatusException(ResponseStatusException ex) {
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ex.getReason());
     }
 }

@@ -63,9 +63,70 @@
         "Use PostGIS spatial types and functions",
         "Optimize viewport queries with spatial indexes",
         "Implement clustering algorithms for provider pins",
-        "Cache frequent viewport queries",
+        "Ensure proper error handling for native SQL queries",
         "Consider response size when returning large provider sets",
-        "Include distance calculations in queries, not in application code"
+        "Include distance calculations in queries, not in application code",
+        "Handle null values for optional parameters like userLat/userLng",
+        "Provide detailed error responses with proper HTTP status codes",
+        "Consider disabling Redis caching for endpoints with database issues",
+        "Always refer to database tables with schema prefix (provider.location, not just location)"
+      ]
+    },
+    {
+      "name": "Database Schema and Table Standards",
+      "pattern": "backend/**/src/main/**/*.sql",
+      "directives": [
+        "IMPORTANT: Provider tables are in the 'provider' schema, always use schema prefix",
+        "In SQL queries, use 'provider.location', 'provider.provider', etc.",
+        "For native queries in JPA, include the schema name for consistent results",
+        "Never change table or schema names without migration strategy",
+        "All PostGIS columns should be appropriately indexed",
+        "Follow PostgreSQL/PostGIS best practices for spatial queries",
+        "Document all schema structures and relationships"
+      ]
+    },
+    {
+      "name": "Map Service Database Connectivity",
+      "pattern": "backend/map-service/src/**/application.yml",
+      "directives": [
+        "Ensure PostgreSQL with PostGIS extension is properly installed and running",
+        "Verify the 'providerdb' database exists with the appropriate schema 'provider'",
+        "Check database user credentials (default: appuser/apppassword)",
+        "Enable detailed SQL logging for debugging connection issues",
+        "Adjust connection pool settings for optimal performance"
+      ]
+    },
+    {
+      "name": "Distance-Based Provider Sorting",
+      "pattern": "backend/map-service/src/**/ProviderMapService.java",
+      "directives": [
+        "Use fallback to non-distance sorting when user location is not provided",
+        "Implement proper error handling for native SQL queries",
+        "Process native query results with proper type mapping",
+        "Optimize distance calculations to leverage PostgreSQL PostGIS functions",
+        "Cache common viewport queries to improve performance"
+      ]
+    },
+    {
+      "name": "CORS Configuration Security",
+      "pattern": "backend/**/config/WebConfig.java",
+      "directives": [
+        "IMPORTANT: The current CORS configuration allows all origins ('*') - this is for development only",
+        "Before production deployment, replace '*' with specific allowed origins",
+        "Consider using allowedOriginPatterns for more flexible origin matching in production",
+        "For production, enable allowCredentials(true) and specify exact origins instead of wildcards",
+        "Monitor and audit CORS requests in production environments"
+      ]
+    },
+    {
+      "name": "Google Maps Integration",
+      "pattern": "apps/user-app/web/index.html",
+      "directives": [
+        "Ensure Google Maps JavaScript API is loaded with async and defer attributes",
+        "Verify the API key is correctly set and has necessary permissions",
+        "Check that the map callback function is defined",
+        "Ensure the map is wrapped in a SizedBox or Container with explicit dimensions",
+        "Verify that the map widget is properly initialized in the Flutter app"
       ]
     },
     {
