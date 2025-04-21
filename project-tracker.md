@@ -1,16 +1,17 @@
 # Provider Finder Platform - Project Tracker
 
 ## Project Status
-**Current Phase:** Backend Infrastructure & Initial Flutter UI Development  
+**Current Phase:** Backend Infrastructure & React Native Migration  
 **Last Updated:** April 2025  
-**Active Components:** Docker Infrastructure, Map Service, Flutter User App  
-**Completed Components:** Project Structure, Git Setup, Docker Infrastructure, Map Service API with data, Map Service-Flutter integration  
-**Next Priority:** Add map clustering, search filtering, appointment booking flow
+**Active Components:** Docker Infrastructure, Map Service, React Native Migration  
+**Completed Components:** Project Structure, Git Setup, Docker Infrastructure, Map Service API with data  
+**Next Priority:** Migrate to React Native with OpenStreetMap integration, add map clustering, search filtering, appointment booking flow
 
 ## System Architecture Summary
-- **Frontend:** Flutter for both user and provider apps
+- **Frontend:** React Native for both user and provider apps (migrating from Flutter)
 - **Backend:** Java 17 + Spring Boot Microservices
 - **Database:** PostgreSQL with PostGIS for geospatial
+- **Map Services:** OpenStreetMap with react-native-maps
 - **AI Components:** Vosk for STT, TinyLlama/GGUF for chatbot
 - **Infrastructure:** Docker with Kubernetes-ready architecture
 
@@ -64,8 +65,11 @@
   - [x] Fix 500 Internal Server Error in provider search endpoint
   - [x] Add proper error handling for map API endpoints
   - [x] Optimize native SQL query for distance-based provider search
-  - [x] ✅ CHECKPOINT: Map service and Flutter UI integration working
   - [ ] Configure Redis caching for performance optimization
+  - [ ] **OpenStreetMap Integration**
+    - [ ] Verify backend compatibility with OpenStreetMap coordinate system
+    - [ ] Update API documentation to clarify map provider independence
+    - [ ] Create tile proxy service for caching (optional)
   
 - [ ] **Appointment Service**
   - [ ] Create appointment data models
@@ -79,25 +83,43 @@
   - [ ] Create SMS fallback system
 
 ### 3. 📱 Frontend Development
+
+- [ ] **React Native Migration**
+  - [ ] Document architecture decisions for the migration
+  - [ ] Set up initial React Native project structure
+  - [ ] Configure project dependencies
+  - [ ] Establish coding standards and patterns
+  - [ ] Create shared component library
+  - [ ] Set up TypeScript configuration
+  - [ ] Implement navigation framework
+  - [ ] Configure testing infrastructure
+  - [ ] Create CI/CD pipeline for React Native builds
+
 - [ ] **User App - Core Structure**
-  - [x] Set up Flutter project
-  - [x] Create base theme and styles
-  - [x] Implement navigation structure
-  - [x] Set up API clients
+  - [ ] Set up React Native project
+  - [ ] Create base theme and styles
+  - [ ] Implement navigation structure with React Navigation
+  - [ ] Set up API clients with Axios/React Query
+  - [ ] Implement state management with Redux Toolkit
   
 - [ ] **User App - Map Features**
-  - [x] Create map interface with Google Maps
-  - [x] Implement provider pins
-  - [x] Build viewport-based loading
-  - [x] Implement zoom/pan handling
+  - [ ] Implement OpenStreetMap with react-native-maps
+  - [ ] Set up tile source configuration
+  - [ ] Create provider pin components
+  - [ ] Implement viewport-based loading
+  - [ ] Implement zoom/pan handling
   - [ ] Add marker clustering for dense areas
   - [ ] Optimize map performance
+  - [ ] Implement custom map styles
+  - [ ] Create map interaction gestures
+  - [ ] Build location search functionality
   
 - [ ] **User App - Provider Discovery**
-  - [x] Build provider detail screen
+  - [ ] Build provider detail screen
   - [ ] Create search interface
   - [ ] Implement filtering system
   - [ ] Build provider list view
+  - [ ] Create animated transitions between views
   
 - [ ] **User App - Appointments**
   - [ ] Create appointment booking flows
@@ -105,9 +127,10 @@
   - [ ] Build payment integration for telemedicine
   
 - [ ] **Provider App - Core Structure**
-  - [ ] Set up Flutter project
+  - [ ] Set up React Native project for provider app
   - [ ] Create authentication flows
   - [ ] Implement profile management
+  - [ ] Build shared components with user app
   
 - [ ] **Provider App - Appointment Management**
   - [ ] Create appointment dashboard
@@ -139,7 +162,9 @@
 ### 6. 🧪 Testing & Quality Assurance
 - [ ] Implement unit tests for backend services
 - [ ] Create integration tests
-- [ ] Develop UI automation tests
+- [ ] Develop UI automation tests for React Native
+- [ ] Set up Jest and React Testing Library
+- [ ] Configure Detox for E2E testing
 - [ ] Perform load testing for map service
 - [ ] Conduct multi-language testing
 - [ ] Test across device types
@@ -154,6 +179,27 @@
 
 ## Technical Decisions & Context
 This section captures important technical decisions to maintain continuity between sessions.
+
+### Frontend Framework Migration
+- **Decision:** Migrating from Flutter to React Native due to improved community support
+- **Impact:** Complete rewrite of frontend applications while backend remains unchanged
+- **Advantages:**
+  - Larger developer community and ecosystem
+  - Strong corporate backing (Facebook/Meta)
+  - Mature mapping libraries with OpenStreetMap support
+  - TypeScript support for improved type safety
+  - Potential for code sharing with web applications
+- **Migration Strategy:**
+  1. Begin with a proof-of-concept for map features
+  2. Phase the transition rather than a complete pause-and-rewrite
+  3. Focus on critical path features first (provider search via map)
+  4. Reuse backend APIs without modification
+- **Key Technical Components:**
+  - React Native core
+  - React Navigation for routing
+  - Redux Toolkit and React Query for state management
+  - react-native-maps with OSM configuration
+  - Styled components approach for theming
 
 ### Database Schema
 - Using PostgreSQL with PostGIS for geospatial capabilities
@@ -175,6 +221,24 @@ This section captures important technical decisions to maintain continuity betwe
 - Comprehensive error response handling added with global exception handler
 - Distance-based sorting for providers near user location
 
+### OpenStreetMap Implementation
+- Decision to use OpenStreetMap with React Native for cost optimization
+- Backend map service already provider-agnostic (using PostGIS)
+- Implementation planned with the following components:
+  1. react-native-maps with OSM tile configuration as primary choice
+  2. react-native-mapbox-gl as potential alternative for advanced features
+  3. Custom marker components for provider pins
+  4. Marker clustering for performance with large datasets
+- Potential tile server options:
+  - Standard OSM tiles (free, no API key required)
+  - MapBox tiles (paid but affordable, better aesthetics)
+  - Self-hosted tile server (more control, higher maintenance)
+- Geocoding services to consider:
+  - Nominatim (free with usage limits)
+  - Photon or Pelias (alternatives if needed)
+- Estimated cost savings: Potentially $1000s/month for a high-traffic application
+- Expected development effort: 3-4 weeks for complete implementation
+
 ### Docker Infrastructure
 - PostgreSQL with PostGIS container running and verified
 - Redis container configured for future caching needs
@@ -182,34 +246,29 @@ This section captures important technical decisions to maintain continuity betwe
 - Docker Compose configuration complete and functional
 - Map Service containerized and connected to PostgreSQL successfully
 
-### Flutter-Backend Integration
-- Successfully tested connection between Flutter UI and backend map service
-- Established proper error handling in Flutter UI for API failures
-- Configured CORS to allow Flutter web app to access backend
-- Implemented viewport-based provider loading based on map movements
-- Set up provider detail display in bottom sheet with location information
-
 ## Environment Information
 - Development IDE: Cursor
 - Java version: 17
 - Spring Boot version: 2.7.9
 - Docker version: 24.0.6
+- Node.js version: 18.x
+- React Native version: 0.72.x
 
 ## Notes for Continuity Between Sessions
-- Current focus: Adding more features to the Flutter map interface
-- Recent accomplishments: 
-  1. Created the initial Flutter UI structure for the user app
-  2. Implemented the map component with provider pins
-  3. Built the API client to connect to the Map Service
-  4. Created provider detail view with comprehensive information display
-  5. Fixed 500 Internal Server Error in map-service endpoints
-  6. ✅ CHECKPOINT: Established stable integration between Flutter UI and backend
+- Current focus: Migration to React Native with OpenStreetMap integration
+- Recent decisions:
+  1. Decision to migrate from Flutter to React Native due to community support concerns
+  2. Updated architecture documentation to reflect React Native as primary frontend technology
+  3. Developed migration strategy focusing on phased transition
+  4. Identified react-native-maps as primary mapping library for OpenStreetMap integration
+  5. Added new tasks specific to React Native migration in project tracker
 - Next priorities: 
-  1. Create feature branch for further development
-  2. Implement marker clustering for better map performance
-  3. Add search and filtering capabilities
-  4. Configure Redis caching correctly for map service
-  5. Begin developing the appointment booking flow
+  1. Set up initial React Native project structure
+  2. Implement OpenStreetMap integration with react-native-maps
+  3. Create proof-of-concept for map features
+  4. Implement marker clustering for better map performance
+  5. Add search and filtering capabilities
+  6. Begin developing the appointment booking flow
 
 ---
 

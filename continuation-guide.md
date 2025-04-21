@@ -4,7 +4,7 @@ This document provides instructions for continuing development from our current 
 
 ## Current Status
 
-We've set up the Docker infrastructure (PostgreSQL with PostGIS, Redis, Elasticsearch) and created the Map Service code structure. The build process for the Map Service encountered an issue that needs to be resolved.
+We've set up the Docker infrastructure (PostgreSQL with PostGIS, Redis, Elasticsearch) and created the Map Service code structure. We recently made a significant decision to migrate from Flutter to React Native for all frontend applications.
 
 ## Next Steps
 
@@ -46,26 +46,63 @@ Once the service is running:
 2. Test the provider search endpoint with sample viewport coordinates
 3. Verify PostgreSQL and PostGIS are properly connected
 
-### 3. Begin Flutter UI Development
+### 3. Begin React Native UI Development
 
 After confirming the Map Service works:
-1. Set up Flutter project for the user app:
-```
-flutter create --org com.healthapp --project-name provider_finder_user apps/user-app
-```
-
-2. Add map dependencies to `pubspec.yaml`:
-```yaml
-dependencies:
-  flutter_map: ^5.0.0
-  latlong2: ^0.9.0
+1. Set up React Native project for the user app:
+```bash
+npx react-native init ProviderFinderUser --template react-native-template-typescript
 ```
 
-3. Create a basic map component that shows a centered map of India with hardcoded provider pins
+2. Install necessary dependencies:
+```bash
+cd apps/user-app
+npm install --save react-native-maps axios redux @reduxjs/toolkit react-redux react-navigation
+```
 
-### 4. Connect Flutter UI to Map Service
+3. Create a basic map component that integrates OpenStreetMap:
+```tsx
+// src/features/map/MapScreen.tsx
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import MapView, { PROVIDER_DEFAULT, Region } from 'react-native-maps';
 
-1. Create API client in Flutter app
+const MapScreen = () => {
+  const initialRegion: Region = {
+    latitude: 20.5937,
+    longitude: 78.9629,
+    latitudeDelta: 20,
+    longitudeDelta: 20,
+  };
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        provider={PROVIDER_DEFAULT}
+        style={styles.map}
+        initialRegion={initialRegion}
+        urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+});
+
+export default MapScreen;
+```
+
+### 4. Connect React Native UI to Map Service
+
+1. Create API client in React Native app using Axios
 2. Implement viewport change detection to query Map Service
 3. Display real provider data on the map
 
@@ -75,6 +112,7 @@ dependencies:
 - **Map Service Code**: `backend/map-service/`
 - **Database Initialization**: `scripts/db/init/01-init-postgis.sql`
 - **Project Tracker**: `project-tracker.md`
+- **Architecture Documentation**: `ARCHITECTURE.md`
 
 ## Database Status
 
@@ -83,6 +121,37 @@ The PostgreSQL database container is running with:
 - Username: `appuser`
 - Password: `apppassword`
 - PostGIS extension is verified working
+
+## React Native Setup Guide
+
+For a new developer joining the project:
+
+1. Install Node.js and npm/yarn
+2. Install the React Native CLI: `npm install -g react-native-cli`
+3. Install required development tools:
+   - For Android: Android Studio, Android SDK
+   - For iOS: Xcode (Mac only)
+4. Clone the repository and navigate to the user app:
+   ```bash
+   git clone https://github.com/your-org/provider-finder-platform.git
+   cd provider-finder-platform/apps/user-app
+   ```
+5. Install dependencies:
+   ```bash
+   npm install
+   ```
+6. Start the Metro bundler:
+   ```bash
+   npx react-native start
+   ```
+7. Run the application:
+   ```bash
+   # For Android
+   npx react-native run-android
+   
+   # For iOS
+   npx react-native run-ios
+   ```
 
 ## Troubleshooting
 

@@ -6,7 +6,7 @@ This document outlines the project structure for the Provider Finder Platform, a
 ## Root Directory Structure
 ```
 provider-finder-platform/
-├── apps/                      # Flutter applications
+├── apps/                      # React Native applications
 │   ├── user-app/             # Patient-facing mobile app
 │   └── provider-app/         # Healthcare provider mobile app
 ├── backend/                   # Java Spring Boot microservices
@@ -31,31 +31,43 @@ provider-finder-platform/
 
 ## Detailed Structure
 
-### Flutter Apps (`apps/`)
+### React Native Apps (`apps/`)
 ```
 apps/
 ├── user-app/
-│   ├── lib/
+│   ├── src/
 │   │   ├── features/
 │   │   │   ├── map/         # Map-related features
 │   │   │   ├── search/      # Provider search
 │   │   │   ├── appointments/# Appointment management
 │   │   │   └── profile/     # User profile
-│   │   ├── core/           # Core functionality
-│   │   ├── shared/         # Shared components
+│   │   ├── components/     # Reusable components
+│   │   ├── navigation/     # Navigation configuration
+│   │   ├── store/          # Redux state management
+│   │   ├── services/       # API services
+│   │   ├── utils/          # Utility functions
 │   │   └── i18n/           # Internationalization
-│   └── test/              # Tests
+│   ├── __tests__/          # Tests
+│   ├── android/            # Android-specific files
+│   ├── ios/                # iOS-specific files
+│   └── package.json        # Dependencies
 └── provider-app/
-    ├── lib/
+    ├── src/
     │   ├── features/
     │   │   ├── dashboard/   # Provider dashboard
     │   │   ├── schedule/    # Schedule management
     │   │   ├── patients/    # Patient management
     │   │   └── profile/     # Provider profile
-    │   ├── core/           # Core functionality
-    │   ├── shared/         # Shared components
+    │   ├── components/     # Reusable components
+    │   ├── navigation/     # Navigation configuration
+    │   ├── store/          # Redux state management
+    │   ├── services/       # API services
+    │   ├── utils/          # Utility functions
     │   └── i18n/           # Internationalization
-    └── test/              # Tests
+    ├── __tests__/          # Tests
+    ├── android/            # Android-specific files
+    ├── ios/                # iOS-specific files
+    └── package.json        # Dependencies
 ```
 
 ### Backend Services (`backend/`)
@@ -125,11 +137,13 @@ docs/
 - Models: `*Entity.java`
 - DTOs: `*Dto.java`
 
-### Flutter Files
-- Widgets: `*_widget.dart`
-- Screens: `*_screen.dart`
-- Models: `*_model.dart`
-- Services: `*_service.dart`
+### React Native Files
+- Components: `*.component.tsx`
+- Screens: `*.screen.tsx`
+- Hooks: `use*.ts`
+- Reducers: `*.slice.ts`
+- Services: `*.service.ts`
+- Utils: `*.util.ts`
 
 ### Configuration Files
 - Environment: `application-[env].yml`
