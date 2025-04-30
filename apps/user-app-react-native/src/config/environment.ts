@@ -12,7 +12,9 @@ export const ENV = __DEV__ ? 'development' : 'production';
 // API configuration
 const API_CONFIG = {
   development: {
-    baseUrl: 'http://localhost:8081/api/map',
+    // Use 10.0.2.2 instead of localhost for Android emulator
+    // This maps to the host machine's localhost
+    baseUrl: 'http://10.0.2.2:8081/api/map',
     timeout: 10000, // 10 seconds
   },
   staging: {

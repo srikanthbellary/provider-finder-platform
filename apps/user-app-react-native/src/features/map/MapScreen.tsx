@@ -8,7 +8,7 @@ import {
   TouchableOpacity, 
   Platform 
 } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Region } from 'react-native-maps';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -22,6 +22,7 @@ import {
 } from './mapSlice';
 import { Provider } from '../../models/provider.model';
 import OSMMapView from './OSMMapView';
+import MarkerCluster from './components/MarkerCluster';
 import { APP_CONFIG, OSM_CONFIG } from '../../config/environment';
 
 type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Map'>;
@@ -97,9 +98,9 @@ const MapScreen: React.FC = () => {
   }, [dispatch, isMapReady]);
 
   // Navigate to provider detail screen
-  const handleMarkerPress = (providerId: number) => {
+  const handleMarkerPress = (provider: Provider) => {
     // Convert to string if your navigation expects a string parameter
-    navigation.navigate('ProviderDetail', { providerId: providerId.toString() });
+    navigation.navigate('ProviderDetail', { providerId: provider.id.toString() });
   };
 
   // Load more providers (next page)
@@ -151,17 +152,6 @@ const MapScreen: React.FC = () => {
     setTileType(TILE_TYPES[nextIndex]);
   };
 
-  // Format location string from provider
-  const getLocationString = (provider: Provider): string => {
-    const location = provider.locations && provider.locations.length > 0 
-      ? provider.locations[0] 
-      : null;
-    
-    if (!location) return '';
-    
-    return `${location.city}, ${location.state}`;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
@@ -178,25 +168,12 @@ const MapScreen: React.FC = () => {
           cacheTiles={true}
           onMapReady={() => setIsMapReady(true)}
         >
-          {providers.map((provider: Provider) => {
-            // Find the primary location or just use the first one
-            const location = provider.locations.find(loc => loc.isPrimary) || provider.locations[0];
-            
-            if (!location) return null;
-            
-            return (
-              <Marker
-                key={`provider-${provider.id}`}
-                coordinate={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                }}
-                title={provider.name}
-                description={getLocationString(provider)}
-                onPress={() => handleMarkerPress(provider.id)}
-              />
-            );
-          })}
+          {/* Use MarkerCluster instead of individual markers */}
+          <MarkerCluster 
+            providers={providers}
+            region={viewport}
+            onMarkerPress={handleMarkerPress}
+          />
         </OSMMapView>
         
         {loading && (
