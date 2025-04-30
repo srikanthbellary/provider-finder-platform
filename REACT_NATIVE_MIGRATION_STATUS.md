@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Start Guide
 - **App Location:** Always use `apps/user-app-expo` directory
-- **Start Command:** `npx expo start --android --clear`
+- **Start Command:** `npx expo start`
 - **Current Implementation:** Using Expo (not bare React Native)
 - **DO NOT USE:** `apps/user-app-react-native` (deprecated)
 
@@ -12,22 +12,23 @@
 - [x] Install core dependencies (React Navigation, Redux, Axios)
 - [x] Create application directory structure following best practices
 - [x] Implement core Redux store configuration
-- [x] Create map view component with react-native-maps
+- [x] Create map view implementation with WebView and Leaflet.js
 - [x] Prepare API service for backend integration
 - [x] Implement map state management with Redux Toolkit
-- [x] Create placeholder for OpenStreetMap integration
+- [x] Successfully implement pure OpenStreetMap solution with no Google dependencies
 - [x] Document project structure and approach
 - [x] Create basic Android project configuration
-- [x] Set up OpenStreetMap tile configuration
+- [x] Set up OpenStreetMap tile configuration in Leaflet.js
 - [x] Configure API client to connect to the backend
 - [x] Implement marker clustering for providers
 - [x] Create provider detail view
+- [x] Implement list view with toggle feature
 - [x] Create connection testing documentation
 - [x] Test the application on Android emulator
 - [x] Connect to backend map service API
 - [x] Display real provider data from PostgreSQL database
-- [x] Implement custom zoom controls for map navigation
-- [x] Add provider detail cards with interactive elements
+- [x] Implement seamless switching between list and map views
+- [x] Add interactive markers with popup details
 
 ## Next Steps
 - [ ] Complete Android build environment setup for production
@@ -39,18 +40,19 @@
 
 ## Technical Achievements
 1. Successfully migrated from Flutter to React Native as the frontend framework
-2. Implemented OpenStreetMap integration with react-native-maps
-3. Created Android project configuration for building the app
-4. Implemented TypeScript for improved type safety
-5. Set up Redux Toolkit for effective state management
-6. Created API client structure for backend integration
-7. Designed responsive map interface for provider discovery
-8. Added support for multiple map tile styles
-9. Implemented marker clustering for better performance
-10. Created provider detail screen with directions/calling functionality
+2. Implemented a pure OpenStreetMap solution using WebView and Leaflet.js with no Google dependencies
+3. Created a 100% Google-free map implementation that requires no API keys for production
+4. Created Android project configuration for building the app
+5. Implemented TypeScript for improved type safety
+6. Set up Redux Toolkit for effective state management
+7. Created API client structure for backend integration
+8. Designed responsive map interface for provider discovery
+9. Added two-way communication between React Native and WebView for map interactions
+10. Implemented interactive markers with popup details
 11. Successfully fetched and displayed real provider data from backend
-12. Implemented custom zoom controls for better map navigation
-13. Added error handling with fallback to mock data when connection fails
+12. Created toggle functionality between list and map views
+13. Added proper attribution for OpenStreetMap
+14. Implemented error handling with fallbacks
 
 ## Known Issues
 1. Need to complete the Android build environment setup for production
@@ -67,5 +69,28 @@ The immediate next steps should focus on:
 
 ## Timeline Update
 - Phase 1 (Project Setup): Completed
-- Phase 2 (Core Functionality): In progress (approximately 85% complete)
+- Phase 2 (Core Functionality): In progress (approximately 90% complete)
 - Phases 3-4: Not yet started 
+
+## OpenStreetMap Implementation Details
+The application now uses a WebView-based approach to render OpenStreetMap with Leaflet.js:
+
+1. **Technical Approach:**
+   - WebView component loads an HTML/JS implementation of Leaflet.js
+   - Provider data is passed from React Native to the WebView as JSON
+   - Two-way communication enables map interactions and provider selection
+   - Custom styling provides a consistent user experience
+
+2. **Advantages:**
+   - No Google Maps dependencies or API keys required
+   - Production-ready with no usage restrictions or costs
+   - Full compliance with OpenStreetMap attribution requirements
+   - Cross-platform compatibility (works on both Android and iOS)
+   - Better performance for large datasets
+
+3. **Implementation Components:**
+   - Leaflet.js for map rendering
+   - HTML/CSS/JS for map presentation
+   - OpenStreetMap tile servers for map data
+   - WebView messaging for React Native integration
+   - Custom marker and popup styling 

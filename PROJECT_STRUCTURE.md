@@ -7,7 +7,7 @@ This document outlines the project structure for the Provider Finder Platform, a
 ```
 provider-finder-platform/
 ├── apps/                      # React Native applications
-│   ├── user-app/             # Patient-facing mobile app
+│   ├── user-app-expo/        # Patient-facing mobile app (current active)
 │   └── provider-app/         # Healthcare provider mobile app
 ├── backend/                   # Java Spring Boot microservices
 │   ├── api-gateway/          # API Gateway service
@@ -34,7 +34,7 @@ provider-finder-platform/
 ### React Native Apps (`apps/`)
 ```
 apps/
-├── user-app/
+├── user-app-expo/           # Current active user app using Expo
 │   ├── src/
 │   │   ├── features/
 │   │   │   ├── map/         # Map-related features
@@ -50,6 +50,9 @@ apps/
 │   ├── __tests__/          # Tests
 │   ├── android/            # Android-specific files
 │   ├── ios/                # iOS-specific files
+│   ├── assets/             # App assets
+│   ├── app.json            # Expo configuration
+│   ├── app.config.js       # Advanced Expo configuration
 │   └── package.json        # Dependencies
 └── provider-app/
     ├── src/
@@ -69,6 +72,37 @@ apps/
     ├── ios/                # iOS-specific files
     └── package.json        # Dependencies
 ```
+
+### OpenStreetMap Implementation Details
+The user app contains a custom OpenStreetMap implementation in `apps/user-app-expo/`:
+
+```
+apps/user-app-expo/
+├── App.tsx               # Main application file with WebView + Leaflet.js implementation
+├── package.json          # Dependencies including react-native-webview
+└── app.config.js         # Configuration with Google Maps disabled
+```
+
+Key components:
+1. **Main App Component (`App.tsx`)**: 
+   - Contains the WebView implementation of OpenStreetMap
+   - Includes HTML/CSS/JS for Leaflet.js integration
+   - Handles two-way communication with the map 
+   - Manages provider data and user interactions
+
+2. **Map HTML Generation**:
+   - Function `generateMapHtml()` creates the HTML/JS content
+   - Embeds Leaflet.js for rendering OpenStreetMap tiles
+   - Passes provider data as JSON for marker rendering
+   - Implements event handling for map interactions
+
+3. **List/Map Toggle**:
+   - Provides seamless switching between list and map views
+   - Maintains provider selection state across view changes
+
+4. **Backend Integration**:
+   - Fetches real provider data from the map-service backend
+   - Processes geospatial data for map rendering
 
 ### Backend Services (`backend/`)
 Each service follows the standard Spring Boot structure:
@@ -91,6 +125,29 @@ backend/[service-name]/
 │   └── test/              # Test classes
 ├── Dockerfile
 └── pom.xml
+```
+
+### Map Service Details
+The map service in `backend/map-service/` is specifically designed to be map provider agnostic:
+
+```
+backend/map-service/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/healthapp/mapservice/
+│   │   │       ├── controller/
+│   │   │       │   └── ProviderMapController.java  # Map endpoints
+│   │   │       ├── service/
+│   │   │       │   └── ProviderMapService.java     # Geospatial queries
+│   │   │       ├── repository/
+│   │   │       │   └── ProviderLocationRepository.java  # PostGIS queries
+│   │   │       └── dto/
+│   │   │           └── ProviderSearchResponse.java     # Provider data
+│   │   └── resources/
+│   │       └── application.yml  # Database configuration
+│   └── test/
+└── pom.xml  # Dependencies including PostGIS
 ```
 
 ### Infrastructure (`infrastructure/`)
@@ -123,6 +180,7 @@ docs/
 - `README.md` - Project overview and setup instructions
 - `PROJECT_STRUCTURE.md` - This file
 - `project-tracker.md` - Project progress tracking
+- `REACT_NATIVE_MIGRATION_STATUS.md` - Migration status and details
 - `CONTRIBUTING.md` - Contribution guidelines
 - `LICENSE` - Project license
 - `.gitignore` - Git ignore rules
@@ -157,3 +215,10 @@ docs/
 - Document all public APIs and interfaces
 - Include appropriate tests for all components
 - Use proper versioning for dependencies 
+
+## Map Implementation Best Practices
+- Use the WebView + Leaflet.js approach for OpenStreetMap integration
+- Always include proper attribution for OpenStreetMap
+- Implement defensive validation for provider coordinates
+- Provide fallbacks for potential network or data issues
+- Ensure proper error handling for WebView communication 

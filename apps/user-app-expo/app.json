@@ -32,11 +32,23 @@
       ],
       "package": "com.srikanthbellary.providerfinder",
       "config": {
-        "useNextNotificationsApi": true
+        "useNextNotificationsApi": true,
+        "googleMaps": {
+          "useAndroidViewMap": true
+        }
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Provider Finder to use your location to find nearby healthcare providers."
+        }
+      ]
+    ],
+    "newArchEnabled": false
   }
 }

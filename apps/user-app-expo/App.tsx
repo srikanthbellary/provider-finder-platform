@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT, MapMarkerProps, UrlTile } from 'react-native-maps';
+import React, { useState, useEffect, useRef, Component } from 'react';
+import { View, Text, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator, Alert, FlatList, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
+import WebView from 'react-native-webview';
 
 interface Provider {
   id: number;
@@ -33,18 +33,47 @@ interface DatabaseProvider {
   specialties: string[];
 }
 
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Map Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Something went wrong with the map.</Text>
+          <Text style={styles.errorText} onPress={() => this.setState({ hasError: false })}>
+            Tap to try again
+          </Text>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [useMapView, setUseMapView] = useState(false); // Disable map view by default
+  const [mapZoom, setMapZoom] = useState(13);
   const [region, setRegion] = useState({
     latitude: 17.4,
     longitude: 78.5,
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
-  const mapRef = useRef<MapView>(null);
+  const webViewRef = useRef<WebView>(null);
 
   // Fetch real provider data on component mount
   useEffect(() => {
@@ -53,8 +82,10 @@ export default function App() {
 
   // Fetch providers when region changes
   useEffect(() => {
-    fetchProviders();
-  }, [region]);
+    if (useMapView) {
+      fetchProviders();
+    }
+  }, [region, useMapView]);
 
   // Fetch real provider data from the backend
   const fetchProviders = async () => {
@@ -80,17 +111,31 @@ export default function App() {
         const dbProviders = response.data.providers;
         console.log(`Fetched ${dbProviders.length} providers from database`);
         
-        // Get locations for providers
-        const providersWithLocations = dbProviders.flatMap((provider: DatabaseProvider) => 
-          provider.locations.map(location => ({
-            id: provider.id,
-            name: provider.name,
-            specialty: provider.providerType,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            rating: provider.isVerified ? 5 : 4  // Higher rating for verified providers
-          }))
-        );
+        // Get locations for providers - with defensive programming to handle possible empty arrays
+        const providersWithLocations = dbProviders.flatMap((provider: DatabaseProvider) => {
+          // Check if provider has locations array and it's not empty
+          if (!provider.locations || !Array.isArray(provider.locations) || provider.locations.length === 0) {
+            console.log(`Provider ${provider.id} (${provider.name}) has no locations, skipping`);
+            return []; // Skip this provider
+          }
+          
+          // Map each location to a provider entry with validation for required fields
+          return provider.locations
+            .filter(location => 
+              // Ensure location has valid coordinates
+              location && 
+              typeof location.latitude === 'number' && 
+              typeof location.longitude === 'number'
+            )
+            .map(location => ({
+              id: provider.id,
+              name: provider.name || 'Unknown Provider',
+              specialty: provider.providerType || 'General',
+              latitude: location.latitude,
+              longitude: location.longitude,
+              rating: provider.isVerified ? 5 : 4  // Higher rating for verified providers
+            }));
+        });
         
         setProviders(providersWithLocations);
         console.log(`Successfully processed ${providersWithLocations.length} provider locations`);
@@ -112,33 +157,170 @@ export default function App() {
     }
   };
 
-  // Handle zoom in/out using the region change
-  const handleRegionChange = (newRegion: any) => {
-    console.log("Region changed:", newRegion);
-    setRegion(newRegion);
+  // A list view implementation that doesn't use the map
+  const renderProviderList = () => {
+    return (
+      <FlatList
+        data={providers}
+        keyExtractor={(item) => `${item.id}-${item.latitude}-${item.longitude}`}
+        renderItem={({item, index}) => (
+          <TouchableOpacity 
+            style={[styles.listItem, selectedProvider?.id === item.id ? styles.selectedListItem : null]} 
+            onPress={() => setSelectedProvider(item)}
+          >
+            <Text style={styles.listItemTitle}>{item.name}</Text>
+            <Text style={styles.listItemSubtitle}>{item.specialty}</Text>
+            <View style={styles.listItemDetails}>
+              <Text>Rating: {item.rating} ⭐</Text>
+              <Text>Coordinates: {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    );
   };
 
-  // Handle map zoom out
-  const zoomOut = () => {
-    if (mapRef.current) {
-      const newRegion = {
-        ...region,
-        latitudeDelta: region.latitudeDelta * 2,
-        longitudeDelta: region.longitudeDelta * 2,
-      };
-      mapRef.current.animateToRegion(newRegion, 300);
+  // Create HTML content for the WebView that displays an OpenStreetMap
+  const generateMapHtml = () => {
+    const markersJson = JSON.stringify(providers.map(provider => ({
+      id: provider.id,
+      name: provider.name,
+      specialty: provider.specialty,
+      lat: provider.latitude,
+      lng: provider.longitude,
+      rating: provider.rating
+    })));
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+        <style>
+          body { margin: 0; padding: 0; }
+          #map { width: 100%; height: 100vh; }
+          .provider-popup .name { font-weight: bold; font-size: 16px; }
+          .provider-popup .specialty { color: #666; margin-bottom: 5px; }
+          .provider-popup .rating { margin-top: 5px; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          // Initialize the map
+          const map = L.map('map').setView([${region.latitude}, ${region.longitude}], ${mapZoom});
+          
+          // Add OpenStreetMap tile layer
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+          }).addTo(map);
+          
+          // Add markers for providers
+          const providers = ${markersJson};
+          
+          providers.forEach(provider => {
+            const marker = L.marker([provider.lat, provider.lng])
+              .addTo(map)
+              .bindPopup(
+                '<div class="provider-popup">' +
+                '<div class="name">' + provider.name + '</div>' +
+                '<div class="specialty">' + provider.specialty + '</div>' +
+                '<div class="rating">Rating: ' + provider.rating + '⭐</div>' +
+                '</div>'
+              );
+              
+            marker.on('click', function() {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'marker_click',
+                provider: provider
+              }));
+            });
+          });
+          
+          // Handle map movement to update region in React Native
+          map.on('moveend', function() {
+            const center = map.getCenter();
+            const bounds = map.getBounds();
+            const zoom = map.getZoom();
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'region_change',
+              region: {
+                latitude: center.lat,
+                longitude: center.lng,
+                latitudeDelta: bounds.getNorth() - bounds.getSouth(),
+                longitudeDelta: bounds.getEast() - bounds.getWest()
+              },
+              zoom: zoom
+            }));
+          });
+        </script>
+      </body>
+      </html>
+    `;
+  };
+
+  // Handle messages from the WebView
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      
+      if (data.type === 'marker_click') {
+        // Find the selected provider
+        const provider = providers.find(p => p.id === data.provider.id);
+        if (provider) {
+          setSelectedProvider(provider);
+        }
+      } else if (data.type === 'region_change') {
+        setRegion(data.region);
+        setMapZoom(data.zoom);
+      }
+    } catch (error) {
+      console.error('Error handling WebView message:', error);
     }
   };
 
-  // Handle map zoom in
-  const zoomIn = () => {
-    if (mapRef.current) {
-      const newRegion = {
-        ...region,
-        latitudeDelta: region.latitudeDelta / 2,
-        longitudeDelta: region.longitudeDelta / 2,
-      };
-      mapRef.current.animateToRegion(newRegion, 300);
+  // Render OpenStreetMap using WebView
+  const renderMap = () => {
+    try {
+      console.log("Rendering OpenStreetMap with", providers.length, "providers");
+      
+      return (
+        <View style={styles.mapContainerFull}>
+          <WebView
+            ref={webViewRef}
+            style={styles.mapFull}
+            originWhitelist={['*']}
+            source={{ html: generateMapHtml() }}
+            onMessage={handleWebViewMessage}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#008080" />
+                <Text style={styles.loaderText}>Loading OpenStreetMap...</Text>
+              </View>
+            )}
+          />
+          <View style={styles.mapAttribution}>
+            <Text style={styles.mapAttributionText}>© OpenStreetMap contributors</Text>
+          </View>
+        </View>
+      );
+    } catch (error) {
+      console.error('Error rendering map:', error);
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error loading map. Please try again.</Text>
+          <Text style={styles.errorText}>{String(error)}</Text>
+        </View>
+      );
     }
   };
 
@@ -147,52 +329,24 @@ export default function App() {
       <StatusBar backgroundColor="#008080" />
       <View style={styles.header}>
         <Text style={styles.headerText}>Provider Finder</Text>
+        <TouchableOpacity 
+          style={styles.toggleButton} 
+          onPress={() => setUseMapView(!useMapView)}
+        >
+          <Text style={styles.toggleButtonText}>
+            {useMapView ? "Switch to List View" : "Switch to Map View"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_DEFAULT}
-          initialRegion={region}
-          onRegionChangeComplete={handleRegionChange}
-          showsUserLocation={true}
-          zoomEnabled={true}
-          zoomControlEnabled={true}
-        >
-          <UrlTile 
-            urlTemplate={"https://tile.openstreetmap.org/{z}/{x}/{y}.png"}
-            maximumZ={19}
-            flipY={false}
-            zIndex={-1}
-            tileSize={256}
-            shouldReplaceMapContent={true}
-          />
-          {providers.map(provider => (
-            <Marker
-              key={provider.id}
-              coordinate={{
-                latitude: provider.latitude,
-                longitude: provider.longitude
-              }}
-              title={provider.name}
-              description={provider.specialty}
-              onPress={() => setSelectedProvider(provider)}
-              pinColor="red"  // Use default red pin
-              tracksViewChanges={false}  // Optimize performance
-            />
-          ))}
-        </MapView>
-        
-        {/* Zoom controls */}
-        <View style={styles.zoomControls}>
-          <View style={styles.zoomButton} onTouchEnd={zoomIn}>
-            <Text style={styles.zoomButtonText}>+</Text>
-          </View>
-          <View style={styles.zoomButton} onTouchEnd={zoomOut}>
-            <Text style={styles.zoomButtonText}>-</Text>
-          </View>
-        </View>
+      <View style={styles.contentContainer}>
+        {useMapView ? (
+          <ErrorBoundary>
+            {renderMap()}
+          </ErrorBoundary>
+        ) : (
+          renderProviderList()
+        )}
       </View>
       
       {selectedProvider && (
@@ -227,17 +381,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#008080',
     paddingVertical: 15,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   headerText: {
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
+    marginRight: 10,
   },
-  mapContainer: {
+  toggleButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  contentContainer: {
     flex: 1,
   },
-  map: {
-    ...StyleSheet.absoluteFillObject,
+  mapContainerFull: {
+    flex: 1,
+    position: 'relative',
+  },
+  mapFull: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   providerCard: {
     position: 'absolute',
@@ -289,29 +462,57 @@ const styles = StyleSheet.create({
   loadingText: {
     color: 'white',
   },
-  zoomControls: {
+  loaderContainer: {
     position: 'absolute',
-    right: 15,
-    bottom: 100,
-    backgroundColor: 'transparent',
-  },
-  zoomButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: 'white',
-    borderRadius: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
-  zoomButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  loaderText: {
+    marginTop: 10,
     color: '#008080',
+  },
+  mapAttribution: {
+    position: 'absolute',
+    bottom: 5,
+    left: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 3,
+    borderRadius: 3,
+  },
+  mapAttributionText: {
+    fontSize: 10,
+    color: '#333',
+  },
+  listItem: {
+    backgroundColor: '#f0f0f0',
+    padding: 15,
+  },
+  selectedListItem: {
+    backgroundColor: '#d4f0f0',
+    borderLeftWidth: 5,
+    borderLeftColor: '#008080',
+  },
+  listItemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  listItemSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 3,
+  },
+  listItemDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#ddd',
   }
 });
