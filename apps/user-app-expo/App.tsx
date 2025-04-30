@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT, MapMarkerProps, UrlTile } from 'react-native-maps';
 import axios from 'axios';
 
 interface Provider {
@@ -20,8 +20,17 @@ interface DatabaseProvider {
   phone: string;
   email: string | null;
   isVerified: boolean;
-  locations: string;
-  specialties: string;
+  isRegisteredUser: boolean;
+  locations: Array<{
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+    addressLine1: string;
+    city: string;
+    state: string;
+  }>;
+  specialties: string[];
 }
 
 export default function App() {
@@ -72,21 +81,19 @@ export default function App() {
         console.log(`Fetched ${dbProviders.length} providers from database`);
         
         // Get locations for providers
-        const providersWithLocations = dbProviders.map((provider: DatabaseProvider) => {
-          // Using random locations within the current viewport for demonstration
-          // In a real app, you'd use the actual location data from your database
-          return {
+        const providersWithLocations = dbProviders.flatMap((provider: DatabaseProvider) => 
+          provider.locations.map(location => ({
             id: provider.id,
             name: provider.name,
             specialty: provider.providerType,
-            latitude: 17.4 + (Math.random() * 0.1 - 0.05), 
-            longitude: 78.5 + (Math.random() * 0.1 - 0.05),
-            rating: 4 + Math.random()  // Random rating between 4-5
-          };
-        });
+            latitude: location.latitude,
+            longitude: location.longitude,
+            rating: provider.isVerified ? 5 : 4  // Higher rating for verified providers
+          }))
+        );
         
         setProviders(providersWithLocations);
-        console.log(`Successfully processed ${providersWithLocations.length} providers with locations`);
+        console.log(`Successfully processed ${providersWithLocations.length} provider locations`);
       } else {
         throw new Error("Invalid response format or no providers in the response");
       }
@@ -153,6 +160,14 @@ export default function App() {
           zoomEnabled={true}
           zoomControlEnabled={true}
         >
+          <UrlTile 
+            urlTemplate={"https://tile.openstreetmap.org/{z}/{x}/{y}.png"}
+            maximumZ={19}
+            flipY={false}
+            zIndex={-1}
+            tileSize={256}
+            shouldReplaceMapContent={true}
+          />
           {providers.map(provider => (
             <Marker
               key={provider.id}
@@ -163,6 +178,8 @@ export default function App() {
               title={provider.name}
               description={provider.specialty}
               onPress={() => setSelectedProvider(provider)}
+              pinColor="red"  // Use default red pin
+              tracksViewChanges={false}  // Optimize performance
             />
           ))}
         </MapView>

@@ -15,7 +15,10 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,9 +27,13 @@
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
       ],
-      "package": "com.srikanthbellary.providerfinder"
+      "package": "com.srikanthbellary.providerfinder",
+      "config": {
+        "useNextNotificationsApi": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

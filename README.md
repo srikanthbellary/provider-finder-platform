@@ -1,6 +1,17 @@
 # Provider Finder Platform 
 A healthcare provider discovery and appointment management system. This platform helps users find healthcare providers on a map, view detailed information, and book appointments.
 
+## 🚀 Quick Start
+1. Navigate to Expo app directory:
+   ```bash
+   cd apps/user-app-expo
+   ```
+2. Start the app:
+   ```bash
+   npx expo start --android --clear
+   ```
+Note: Make sure your Android emulator is running before starting the app.
+
 ## Core Features
 - Map-based healthcare provider discovery using OpenStreetMap
 - Provider search and filtering by specialty, rating, and distance

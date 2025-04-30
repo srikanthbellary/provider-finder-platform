@@ -1,5 +1,11 @@
 # React Native Migration Status
 
+## 🚀 Quick Start Guide
+- **App Location:** Always use `apps/user-app-expo` directory
+- **Start Command:** `npx expo start --android --clear`
+- **Current Implementation:** Using Expo (not bare React Native)
+- **DO NOT USE:** `apps/user-app-react-native` (deprecated)
+
 ## Completed Tasks
 - [x] Set up initial React Native project structure
 - [x] Configure project with TypeScript
