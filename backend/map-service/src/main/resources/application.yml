@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8090
   servlet:
     context-path: /api/map
 
@@ -7,7 +7,7 @@ spring:
   application:
     name: map-service
   datasource:
-    url: jdbc:postgresql://postgres:5432/providerdb
+    url: jdbc:postgresql://localhost:5432/providerdb
     username: appuser
     password: apppassword
     driver-class-name: org.postgresql.Driver
@@ -21,7 +21,7 @@ spring:
   cache:
     type: none
   redis:
-    host: host.docker.internal
+    host: localhost
     port: 6379
     timeout: 2000
 

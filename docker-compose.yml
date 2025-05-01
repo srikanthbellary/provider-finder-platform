@@ -34,7 +34,7 @@ services:
     build:
       context: ./backend/map-service
     ports:
-      - "8081:8081"
+      - "8090:8090"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - DB_HOST=postgres
@@ -231,10 +231,6 @@ services:
   #     - provider-finder-network
   #   restart: unless-stopped
 
-networks:
-  provider-finder-network:
-    driver: bridge
-
 volumes:
   postgres_data:
   redis_data:
@@ -242,3 +238,7 @@ volumes:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+
+networks:
+  provider-finder-network:
+    driver: bridge
