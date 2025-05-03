@@ -24,9 +24,36 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      # Other environment variables
     depends_on:
       - map-service
+      - search-service
+      - chat-service
+    restart: unless-stopped
+
+  # Search service
+  search-service:
+    build:
+      context: ./backend/search-service
+      dockerfile: Dockerfile
+    container_name: provider-finder-search
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/providerdb
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-appuser}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-apppassword}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      - discovery-server
+      - postgres
+    networks:
+      - provider-finder-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/api/search/providers/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     restart: unless-stopped
 
   # Map service
@@ -147,6 +174,36 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Chat service
+  chat-service:
+    build:
+      context: ./backend/chat-service
+      dockerfile: Dockerfile
+    container_name: provider-finder-chat
+    ports:
+      - "8095:8095"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/providerdb
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-appuser}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-apppassword}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redispassword}
+      - EUREKA_URI=http://discovery-server:8761/eureka
+    depends_on:
+      - postgres
+      - redis
+      - discovery-server
+    networks:
+      - provider-finder-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/api/chat/health"]
       interval: 30s
       timeout: 10s
       retries: 5

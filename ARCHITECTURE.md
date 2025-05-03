@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Provider Finder Platform is currently structured as a monorepo containing all services, backends, and UI components in a single repository. This document explains the architectural decisions, current development approach, and future deployment strategy.
+The Provider Finder Platform is a comprehensive healthcare provider discovery system with an intuitive, multi-modal interface. The platform is structured as a monorepo containing all services, backends, and UI components in a single repository. This document explains the architectural decisions, current development approach, and future deployment strategy.
 
 ## Repository Structure
 
@@ -11,40 +11,47 @@ The platform follows a modular structure within a monorepo:
 ```
 provider-finder-platform/
 ├── apps/                   # Frontend applications
-│   ├── user-app/           # User-facing React Native application 
+│   ├── user-app-expo/      # User-facing React Native application (Expo-based)
 │   └── provider-app/       # Provider-facing React Native application
 ├── backend/                # Backend microservices
-│   ├── map-service/        # Geographic provider search service
+│   ├── map-service/        # Geographic provider search service with PostGIS
+│   ├── chat-service/       # AI-powered chat service with DJL integration
+│   ├── search-service/     # Dedicated intelligent search service
 │   ├── api-gateway/        # API gateway service
 │   └── [other-services]/   # Additional microservices
 ├── common/                 # Shared libraries and utilities
-├── docs/                   # Documentation
+├── docs/                   # Documentation and mappings
+│   └── symp_spec.json     # Symptom-to-specialist mapping
 ├── infra/                  # Infrastructure configuration
 └── scripts/                # Utility scripts
 ```
 
-## Development Approach
+## User Flow Architecture
 
-### Current: Monorepo Strategy
+### 1. Home Screen
+- Three main entry points:
+  - Search: Text-based symptom/provider search
+  - Chat: AI-powered conversational interface (planned)
+  - Voice: Speech-based interaction (planned)
 
-We've adopted a monorepo approach during the initial development phase for several reasons:
+### 2. Search Flow
+1. User enters search text (symptom/specialty/provider)
+2. System processes input:
+   - If symptom: Maps to specialist using symp_spec.json
+   - If specialty/provider: Direct search
+3. Backend queries provider database
+4. Results displayed on map view
 
-1. **Simplified Coordination**: Easier to coordinate changes across service boundaries
-2. **Consistency**: Enforces consistent coding standards and architecture
-3. **Visibility**: Provides a complete view of the platform
-4. **CI/CD Efficiency**: Allows for efficient testing of cross-service changes
-5. **Reduced Overhead**: Simplifies dependency management
-6. **Speed of Development**: Facilitates rapid iteration during the early stages
-
-### Future: Independent Microservices
-
-While development occurs in a monorepo, each component is designed to function as an independent microservice with its own:
-
-- Deployment lifecycle
-- Version control repository
-- Continuous integration/deployment pipeline
-- Scaling characteristics
-- Resource allocations
+### 3. Map Integration
+- Pure OpenStreetMap implementation via WebView and Leaflet.js
+- No dependency on Google Maps or other proprietary services
+- Provider markers with custom styling and clustering
+- Distance-based sorting and filtering using PostGIS
+- Interactive provider details with popup information
+- Seamless toggle between map and list views
+- Proper attribution to OpenStreetMap contributors
+- Optimized viewport-based loading with spatial indexes
+- Two-way communication between React Native and WebView
 
 ## Frontend Technology Choice
 
@@ -56,6 +63,128 @@ After careful consideration and business requirements analysis, **React Native**
 4. **Corporate Backing**: Maintained by Facebook/Meta with strong industry support
 5. **Map Implementation Options**: Mature libraries for OpenStreetMap integration
 6. **Code Reusability**: Potential to share code with web applications if needed in the future
+
+## Component Architecture
+
+### Frontend Components
+1. **Home Screen**
+   - Modern three-button interface
+   - Material design implementation
+   - Feature cards with icons
+   - Responsive layout
+   - Navigation integration
+
+2. **Chat Screen**
+   - GiftedChat integration
+   - WebSocket connection
+   - Real-time messaging
+   - Session management
+   - Typing indicators
+   - Message persistence
+   - Error recovery
+
+3. **Search Screen**
+   - Search interface
+   - Filter panel
+   - Sort options
+   - Provider listing
+   - Pagination support
+   - Pull-to-refresh
+   - Loading states
+   - Error handling
+
+4. **Map Component**
+   - OpenStreetMap integration
+   - Provider markers
+   - Interactive overlays
+   - Location tracking
+   - Viewport management
+   - Marker clustering
+   - List/map toggle
+
+5. **Shared Components**
+   - Error boundaries
+   - Loading states
+   - Error displays
+   - Navigation structure
+   - Theme system
+   - Internationalization
+
+### UI Architecture Patterns
+1. **Feature-First Organization**
+   - Separate feature modules
+   - Isolated component trees
+   - Feature-specific state
+   - Dedicated hooks
+   - Focused testing
+
+2. **State Management**
+   - Redux for global state
+   - Local state with hooks
+   - WebSocket state handling
+   - Loading state management
+   - Error state handling
+
+3. **Navigation Flow**
+   - Stack-based navigation
+   - Type-safe routes
+   - Deep linking support
+   - Screen transitions
+   - State persistence
+
+4. **UI/UX Principles**
+   - Material Design
+   - Responsive layouts
+   - Accessibility support
+   - Error prevention
+   - Loading feedback
+   - Offline support
+
+### Backend Services
+1. **Map Service**
+   - Provider geolocation
+   - Distance calculations
+   - Spatial queries
+   - PostGIS integration
+   - Viewport optimization
+
+2. **Chat Service**
+   - Spring Boot based implementation
+   - Deep Java Library (DJL) for AI capabilities
+   - WebSocket support for real-time chat
+   - Redis-based session management
+   - Integration with HuggingFace tokenizers
+   - Real-time response generation
+   - Service discovery via Eureka
+
+3. **Search Service**
+   - Spring Boot based implementation
+   - Intelligent search capabilities
+   - Symptom-to-specialist mapping
+   - Provider matching algorithms
+   - Integration with map service
+   - Advanced filtering options
+
+4. **Future Services**
+   - Voice processing
+   - Additional AI recommendations
+
+## Data Flow
+
+1. **Search Flow**
+```
+User Input -> Search Service -> Specialist Mapping -> Provider Search -> Map Display
+```
+
+2. **Chat Flow**
+```
+User Message -> Chat Service (WebSocket) -> DJL Processing -> Service Integration -> Response Generation
+```
+
+3. **Direct Provider Flow**
+```
+Provider Search -> Geospatial Query -> Map Display
+```
 
 ## Deployment Strategy
 
@@ -93,7 +222,7 @@ Security has been designed with a cloud-native approach:
 1. **Secret Management**
    - Environment variables for configuration
    - Runtime-generated configurations
-   - Integration with cloud secret managers (GCP Secret Manager, etc.)
+   - Integration with cloud secret managers
    - No hardcoded secrets or API keys
 
 2. **Service Authentication**
@@ -102,11 +231,14 @@ Security has been designed with a cloud-native approach:
    - API key management for third-party services
 
 3. **Cost-Effective Map Services**
-   - Implementing OpenStreetMap for mapping functionality
-   - Eliminates ongoing costs associated with map loads
-   - Provides flexibility in tile server selection
-   - Removes dependency on third-party API keys for core map functions
-   - Maintains geographic functionality through PostGIS in the backend
+   - Pure OpenStreetMap implementation via WebView and Leaflet.js
+   - Zero ongoing costs for map services
+   - No API key requirements
+   - Complete independence from proprietary map services
+   - Efficient provider data querying through PostGIS
+   - Custom marker clustering for improved performance
+   - Seamless integration with backend spatial queries
+   - Full compliance with OpenStreetMap usage policies
 
 ## Migration Path
 
@@ -173,8 +305,21 @@ When developing React Native components:
    - Use memo and useCallback for expensive components
    - Implement proper asset management and caching
 
+## Technology Stack Updates
+
+1. **Backend Technologies**
+   - Java 17 + Spring Boot for all services
+   - Deep Java Library (DJL) for AI capabilities
+   - PostgreSQL with PostGIS for geospatial
+   - Redis for session management and caching
+   - Spring Cloud for service discovery
+
+2. **Frontend Technologies**
+   - React Native with Expo
+   - WebView + Leaflet.js for maps
+   - TypeScript for type safety
+   - Redux for state management
+
 ## Conclusion
 
-This architecture provides the best of both worlds: the development efficiency of a monorepo with the deployment flexibility of microservices. Each component is designed to operate independently while maintaining coherent integration within the platform.
-
-By adopting React Native as our frontend technology and following this architecture approach, we ensure the Provider Finder Platform can scale and evolve while maintaining deployment flexibility across cloud providers and on-premises environments. 
+This architecture provides a robust foundation for the Provider Finder Platform, with clear separation of concerns and a user-centric approach. The new home screen and search flow enhance user experience while maintaining the system's scalability and maintainability. 

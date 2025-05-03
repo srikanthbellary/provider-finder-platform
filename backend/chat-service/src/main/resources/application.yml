@@ -1,0 +1,40 @@
+server:
+  port: 8095
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: chat-service
+  profiles:
+    active: development
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:redispassword}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: true
+    
+logging:
+  level:
+    com.provider.chat: INFO
+    org.springframework.web: INFO 
